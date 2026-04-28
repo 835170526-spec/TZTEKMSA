@@ -165,9 +165,7 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
                   <tr key={idx} className={`hover:bg-gray-50 ${!row.passOverall ? 'bg-red-50/30' : ''}`}>
                     <td className="px-3 py-2.5 font-medium text-gray-800">{row.nozzle ? `${row.nozzle}${row.fai}` : row.fai}</td>
                     <td className="px-3 py-2.5 text-right text-gray-600">{raw(row.contribution)}</td>
-                    <td className={`px-3 py-2.5 text-right font-medium ${row.pTV >= 10 ? 'text-red-600' : 'text-gray-700'}`}>
-                      {raw(row.pTV)}
-                    </td>
+                    <td className="px-3 py-2.5 text-right text-gray-600">{raw(row.pTV)}</td>
                     <td className={`px-3 py-2.5 text-right font-medium ${row.pTol >= 10 ? 'text-red-600' : 'text-gray-700'}`}>
                       {raw(row.pTol)}
                     </td>
