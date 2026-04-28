@@ -119,6 +119,10 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
       <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
           <h4 className="font-semibold text-gray-700 text-sm">GRR</h4>
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Info className="w-3.5 h-3.5" />
+            %P/Tolerance &lt;10%，NDC ≥5
+          </div>
           {/* Search input */}
           <div className="relative">
             <input
@@ -165,13 +169,9 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
                   <tr key={idx} className={`hover:bg-gray-50 ${!row.passOverall ? 'bg-red-50/30' : ''}`}>
                     <td className="px-3 py-2.5 font-medium text-gray-800">{row.nozzle ? `${row.nozzle}${row.fai}` : row.fai}</td>
                     <td className="px-3 py-2.5 text-right text-gray-600">{raw(row.contribution)}</td>
-                    <td className="px-3 py-2.5 text-right text-gray-600">{raw(row.pTV)}</td>
-                    <td className={`px-3 py-2.5 text-right font-medium ${row.pTol >= 10 ? 'text-red-600' : 'text-gray-700'}`}>
-                      {raw(row.pTol)}
-                    </td>
-                    <td className={`px-3 py-2.5 text-right font-medium ${row.ndc < 5 ? 'text-red-600' : 'text-gray-700'}`}>
-                      {row.ndc}
-                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium text-gray-700">{raw(row.pTV)}</td>
+                    <td className="px-3 py-2.5 text-right font-medium text-gray-700">{raw(row.pTol)}</td>
+                    <td className="px-3 py-2.5 text-right font-medium text-gray-700">{row.ndc}</td>
                     <td className="px-3 py-2.5 text-center"><PassBadge pass={row.passPTol} /></td>
                     <td className="px-3 py-2.5 text-center"><PassBadge pass={row.passNDC} /></td>
                     <td className="px-3 py-2.5 text-center"><PassBadge pass={row.passOverall} /></td>
@@ -212,10 +212,17 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
 
 function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> }) {
   const [showAll, setShowAll] = useState(false);
-  const displayed = showAll ? data.shifts : data.shifts.slice(0, 20);
+  const [search, setSearch] = useState('');
 
-  const meanshiftFail = data.shifts.filter(s => !s.passMeanshift).length;
-  const rsqFail = data.shifts.filter(s => !s.passRSQ).length;
+  // Filter items by search term (FAI number)
+  const filtered = search.trim()
+    ? data.shifts.filter(item => item.fai.toLowerCase().includes(search.trim().toLowerCase()))
+    : data.shifts;
+
+  const displayed = showAll ? filtered : filtered.slice(0, 20);
+
+  const meanshiftFail = filtered.filter(s => !s.passMeanshift).length;
+  const rsqFail = filtered.filter(s => !s.passRSQ).length;
 
   return (
     <div className="space-y-4">
@@ -235,11 +242,32 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
 
       {/* Shift table */}
       <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
           <h4 className="font-semibold text-gray-700 text-sm">Correlation Report Shift 汇总</h4>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <Info className="w-3.5 h-3.5" />
-            Meanshift/Tol ≤10%，Max Offset/Tol ≤15%，RSQ ≥85%
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Info className="w-3.5 h-3.5" />
+              Meanshift/Tol ≤10%，Max Offset/Tol ≤15%，RSQ ≥85%
+            </div>
+            {/* Search input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="搜索 FAI 编号..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-7 pr-8 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 w-44"
+              />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-3.5 h-3.5 text-gray-400" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -259,7 +287,13 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {displayed.map((row: CorrelationShiftItem) => {
+              {displayed.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="px-3 py-8 text-center text-gray-400">
+                    {search ? `未找到匹配 "${search}" 的结果` : '暂无数据'}
+                  </td>
+                </tr>
+              ) : displayed.map((row: CorrelationShiftItem) => {
                 const allPass = row.passMeanshift && row.passMaxOffset && row.passRSQ;
                 return (
                   <tr key={row.fai} className={`hover:bg-gray-50 ${!allPass ? 'bg-red-50/20' : ''}`}>
@@ -285,11 +319,23 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
             </tbody>
           </table>
         </div>
-        {data.shifts.length > 20 && (
-          <div className="px-4 py-2 border-t border-gray-100 text-center">
+        {filtered.length > 20 && (
+          <div className="px-4 py-2 border-t border-gray-100 text-center flex items-center justify-center gap-4">
             <button onClick={() => setShowAll(!showAll)} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              {showAll ? '收起' : `展开全部 ${data.shifts.length} 个 FAI`}
+              {showAll ? '收起' : `展开全部 ${filtered.length} 个 FAI`}
             </button>
+            {search && (
+              <span className="text-xs text-gray-400">
+                共 {filtered.length} 条匹配结果
+              </span>
+            )}
+          </div>
+        )}
+        {search && filtered.length > 0 && filtered.length <= 20 && (
+          <div className="px-4 py-2 border-t border-gray-100 text-center">
+            <span className="text-xs text-gray-400">
+              共 {filtered.length} 条匹配结果
+            </span>
           </div>
         )}
       </div>
