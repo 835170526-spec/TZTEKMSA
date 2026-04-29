@@ -16,7 +16,6 @@ import {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-// 直接显示 Excel 中的原始值，不做任何转换
 function raw(v: number, d = 4) {
   return isNaN(v) ? '-' : v.toFixed(d);
 }
@@ -89,7 +88,6 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Filter items by search term (FAI number or nozzle+FAI)
   const filtered = search.trim()
     ? data.items.filter(item => {
         const label = item.nozzle ? `${item.nozzle}${item.fai}` : item.fai;
@@ -101,7 +99,6 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
 
   return (
     <div className="space-y-4">
-      {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-2 gap-3">
         {[
           { label: 'Pass Rate', value: rawPct(data.passRate * 100), icon: <Activity className="w-4 h-4" />, color: data.passRate >= 0.9 ? 'text-green-600 bg-green-50' : 'text-orange-600 bg-orange-50' },
@@ -115,7 +112,6 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
         ))}
       </div>
 
-      {/* GRR table - direct extraction */}
       <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
           <h4 className="font-semibold text-gray-700 text-sm">GRR</h4>
@@ -123,7 +119,6 @@ function GRRPanel({ data }: { data: NonNullable<ParsedExcelData['grr']> }) {
             <Info className="w-3.5 h-3.5" />
             %P/Tolerance &lt;10%，NDC ≥5
           </div>
-          {/* Search input */}
           <div className="relative">
             <input
               type="text"
@@ -214,7 +209,6 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Filter items by search term (FAI number)
   const filtered = search.trim()
     ? data.shifts.filter(item => item.fai.toLowerCase().includes(search.trim().toLowerCase()))
     : data.shifts;
@@ -226,7 +220,6 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
 
   return (
     <div className="space-y-4">
-      {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-2 gap-3">
         {[
           { label: 'Meanshift Fail', value: meanshiftFail, icon: <AlertTriangle className="w-4 h-4" />, color: meanshiftFail === 0 ? 'text-green-600 bg-green-50' : 'text-orange-600 bg-orange-50' },
@@ -240,7 +233,6 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
         ))}
       </div>
 
-      {/* Shift table */}
       <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
           <h4 className="font-semibold text-gray-700 text-sm">Correlation Report Shift 汇总</h4>
@@ -249,7 +241,6 @@ function ReportPanel({ data }: { data: NonNullable<ParsedExcelData['report']> })
               <Info className="w-3.5 h-3.5" />
               Meanshift/Tol ≤10%，Max Offset/Tol ≤15%，RSQ ≥85%
             </div>
-            {/* Search input */}
             <div className="relative">
               <input
                 type="text"
@@ -353,7 +344,6 @@ function FileCard({ result, onRemove }: { result: ParsedExcelData; onRemove: () 
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-      {/* Card header */}
       <div
         className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => setOpen(!open)}
@@ -368,10 +358,10 @@ function FileCard({ result, onRemove }: { result: ParsedExcelData; onRemove: () 
             {result.error && <span className="text-xs text-red-500">{result.error}</span>}
             {result.grr && <span className="text-xs text-gray-400">{result.grr.items.length} rows · Pass {rawPct(result.grr.passRate * 100)}</span>}
             {result.report && <span className="text-xs text-gray-400">{result.report.shifts.length} FAIs · All Pass {result.report.shifts.filter(s => s.passMeanshift && s.passMaxOffset && s.passRSQ).length}</span>}
-            {/* 已持久化标记 */}
+            {/* 已同步标记 — 改动点① */}
             {result.dbId && (
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-xs">
-                <Database className="w-2.5 h-2.5" />已保存
+                <Database className="w-2.5 h-2.5" />已同步
               </span>
             )}
           </div>
@@ -387,7 +377,6 @@ function FileCard({ result, onRemove }: { result: ParsedExcelData; onRemove: () 
         </div>
       </div>
 
-      {/* Content */}
       {open && (
         <div className="px-5 pb-5 border-t border-gray-100 pt-4">
           {result.grr && <GRRPanel data={result.grr} />}
@@ -433,7 +422,6 @@ function GroupPanel({ group, files, onRename, onDelete, onRemoveFile, onUpload, 
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-      {/* Group header */}
       <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100">
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
           {open
@@ -455,9 +443,7 @@ function GroupPanel({ group, files, onRename, onDelete, onRemoveFile, onUpload, 
           <span className="text-xs text-gray-400 flex-shrink-0">{files.length} 个文件</span>
         </button>
 
-        {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Upload to this group */}
           <button
             onClick={() => onUpload(group.id)}
             disabled={loading}
@@ -466,7 +452,6 @@ function GroupPanel({ group, files, onRename, onDelete, onRemoveFile, onUpload, 
           >
             <Upload className="w-3.5 h-3.5" />
           </button>
-          {/* Rename */}
           <button
             onClick={() => { setEditing(true); setOpen(true); }}
             title="重命名"
@@ -474,7 +459,6 @@ function GroupPanel({ group, files, onRename, onDelete, onRemoveFile, onUpload, 
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          {/* Delete group */}
           <button
             onClick={() => onDelete(group.id)}
             title="删除分组（文件不会被删除）"
@@ -482,14 +466,12 @@ function GroupPanel({ group, files, onRename, onDelete, onRemoveFile, onUpload, 
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-          {/* Collapse toggle */}
           <button onClick={() => setOpen(o => !o)} className="p-1.5 text-gray-300 hover:text-gray-500 rounded-lg transition-colors">
             {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
-      {/* Files */}
       {open && (
         <div className="p-3 space-y-3">
           {files.length === 0 ? (
@@ -523,16 +505,14 @@ export default function MSADashboard() {
   const [loading, setLoading]       = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // 上传目标分组（由分组"上传"按钮触发）
   const [uploadTargetGroup, setUploadTargetGroup] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 新建分组输入
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName]   = useState('');
   const newGroupInputRef = useRef<HTMLInputElement>(null);
 
-  // ── 初始化：从 IndexedDB 恢复 ──
+  // ── 初始化：从云端恢复 ──
   useEffect(() => {
     (async () => {
       try {
@@ -541,7 +521,6 @@ export default function MSADashboard() {
           loadAllGroupsFromDB(),
         ]);
 
-        // 若无分组，自动生成默认分组
         let groups = storedGroups;
         if (groups.length === 0) {
           const defaultGroup: StoredGroup = {
@@ -561,7 +540,7 @@ export default function MSADashboard() {
         });
         setResults(parsed);
       } catch (e) {
-        console.error('Failed to load from IndexedDB:', e);
+        console.error('Failed to load from cloud:', e);
       } finally {
         setInitializing(false);
       }
@@ -586,13 +565,11 @@ export default function MSADashboard() {
     setLoading(false);
   };
 
-  // 顶部上传区（上传到当前 activeGroup 或默认分组）
   const handleTopUpload = useCallback((files: File[]) => {
     const targetId = groups[0]?.id ?? 'default';
     handleFiles(files, targetId);
   }, [groups]);
 
-  // 分组上传按钮触发
   const triggerGroupUpload = (groupId: string) => {
     setUploadTargetGroup(groupId);
     fileInputRef.current?.click();
@@ -607,13 +584,11 @@ export default function MSADashboard() {
     setUploadTargetGroup(null);
   };
 
-  // ── 删除文件 ──
   const removeFile = async (dbId: string) => {
     try { await deleteFileFromDB(dbId); } catch {}
     setResults(prev => prev.filter(r => r.dbId !== dbId));
   };
 
-  // ── 创建分组 ──
   const commitCreateGroup = async () => {
     const name = newGroupName.trim();
     if (!name) { setCreatingGroup(false); return; }
@@ -633,7 +608,6 @@ export default function MSADashboard() {
     if (creatingGroup) newGroupInputRef.current?.focus();
   }, [creatingGroup]);
 
-  // ── 重命名分组 ──
   const renameGroup = async (id: string, name: string) => {
     const group = groups.find(g => g.id === id);
     if (!group) return;
@@ -642,11 +616,9 @@ export default function MSADashboard() {
     setGroups(prev => prev.map(g => g.id === id ? updated : g));
   };
 
-  // ── 删除分组 ──
   const deleteGroup = async (id: string) => {
     if (groups.length <= 1) { alert('至少保留一个分组'); return; }
     await deleteGroupFromDB(id);
-    // 把该分组的文件移到第一个分组
     const fallback = groups.find(g => g.id !== id)?.id ?? 'default';
     const toMove = results.filter(r => r.groupId === id && r.dbId);
     await Promise.all(toMove.map(r => moveFileToDB(r.dbId!, fallback)));
@@ -658,7 +630,8 @@ export default function MSADashboard() {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
         <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-        <p className="text-gray-400 text-sm">正在加载已保存的文件...</p>
+        {/* 改动点②：加载提示 */}
+        <p className="text-gray-500 text-sm mt-1">正在从云端加载已保存的文件...</p>
       </div>
     );
   }
@@ -669,19 +642,20 @@ export default function MSADashboard() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">MSA 数据看板</h1>
-          <p className="text-gray-500 text-sm mt-1">上传 Excel 报告，自动提取 GRR 及 Report Shift 数据，刷新后自动恢复</p>
+          {/* 改动点③：副标题 */}
+          <p className="text-gray-500 text-sm mt-1">上传 Excel 报告，自动提取 GRR 及 Report Shift 数据，云端存储，多设备同步</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* 改动点④：右上角统计标签 */}
           {results.length > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-medium">
               <Database className="w-3.5 h-3.5" />
-              {results.filter(r => r.dbId).length} 个文件已持久化
+              {results.filter(r => r.dbId).length} 个文件已云端同步
             </div>
           )}
         </div>
       </div>
 
-      {/* 隐藏的 file input（分组上传用） */}
       <input
         ref={fileInputRef}
         type="file"
@@ -691,7 +665,6 @@ export default function MSADashboard() {
         onChange={handleInputChange}
       />
 
-      {/* Upload zone（上传到第一个分组） */}
       <UploadZone onFiles={handleTopUpload} loading={loading} />
 
       {/* Support hint */}
@@ -704,15 +677,15 @@ export default function MSADashboard() {
           <div className="w-2 h-2 rounded-full bg-blue-500" />
           Report Sheet：提取 Meanshift / Max Offset / RSQ
         </div>
+        {/* 改动点⑤：底部 hint */}
         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg">
           <Database className="w-3.5 h-3.5" />
-          文件自动保存至浏览器，刷新后仍可查看
+          文件自动同步至云端，多设备可查看
         </div>
       </div>
 
       {/* 分组管理 */}
       <div className="space-y-3">
-        {/* 分组列表 */}
         {groups.map(group => (
           <GroupPanel
             key={group.id}
@@ -726,7 +699,6 @@ export default function MSADashboard() {
           />
         ))}
 
-        {/* 新建分组 */}
         {creatingGroup ? (
           <div className="flex items-center gap-2 px-4 py-3 bg-white border-2 border-blue-300 rounded-2xl shadow-sm">
             <FolderPlus className="w-4 h-4 text-blue-400 flex-shrink-0" />
